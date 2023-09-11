@@ -134,29 +134,117 @@ pairs1 = ((1, 19, 20, 23, 27, 29, 30, 31, 32, 33, 35, 37, 39, 40, 41, 44, 45, 46
 #     time_difference_minutes.append(time_difference.total_seconds())
 # print("Timestamp as datetime:", time_difference_minutes)
 
+###============================### The following part is for drawing 6 subplot on one canvas
+
+# import matplotlib.pyplot as plt
+# import numpy as np
+
+# # Generate some example images
+# images = []
+# for _ in range(5):
+#     image = np.random.random((100, 100))  # Example random image
+#     images.append(image)
+
+# # Create a 2x3 grid of subplots
+# fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+
+# # Flatten the axes array for easier indexing
+# axes = axes.ravel()
+
+# # Plot each image in a subplot
+# for i in range(5):
+#     axes[i].imshow(images[i], cmap='gray')
+#     axes[i].set_title(f'Image {i+1}')
+#     axes[i].axis('off')
+
+# # Adjust layout and show the plot
+# plt.tight_layout()
+# plt.show()
 
 
-import matplotlib.pyplot as plt
+# ###============================### The following part is for time series plot
+# import matplotlib.pyplot as plt
+
+# # Data - x-coordinates where spikes will be plotted
+# x_values = [1, 2, 3, 4, 5]
+# # You can also specify the height of each spike (y-coordinates)
+# y_values = [10, 15, 7, 20, 12]
+
+# # Create a figure and axis
+# fig, ax = plt.subplots()
+
+# # Plot spikes using vlines
+# ax.vlines(x_values, ymin=0, ymax=y_values, color='red', linestyle='dashed')
+
+# # Set labels and title
+# ax.set_xlabel('X-axis')
+# ax.set_ylabel('Y-axis')
+# ax.set_title('Spike Plot')
+
+# # Show the plot
+# plt.show()
+
+###============================### The following part is for convolution
 import numpy as np
+from scipy import signal
+import matplotlib.pyplot as plt
+import cuml_area as ca
+import create_matrix as cm
 
-# Generate some example images
-images = []
-for _ in range(5):
-    image = np.random.random((100, 100))  # Example random image
-    images.append(image)
+# Define a list (discrete signal)
+signal_list = [1, 2, 3, 4, 5]
 
-# Create a 2x3 grid of subplots
-fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+# Define a continuous function (e.g., a Gaussian)
+a = 1.5
+b = 3
+def continuous_function(x):
+    return (np.exp(-x/b) * x**(a-1))
 
-# Flatten the axes array for easier indexing
-axes = axes.ravel()
+# Define the time axis for the continuous function
+axis_len = max(ca.normalize_timestamp(cm.loc_times_list[ca.pairs[0]]))
+spike_len = len(cm.MaxHeight_list[ca.pairs[0]])
+t_continuous = np.linspace(0, axis_len, spike_len)
 
-# Plot each image in a subplot
-for i in range(5):
-    axes[i].imshow(images[i], cmap='gray')
-    axes[i].set_title(f'Image {i+1}')
-    axes[i].axis('off')
+print(axis_len)
+# Calculate the convolution between the list and the continuous function
+# convolution_result = signal.convolve(signal_list, continuous_function(t_continuous), mode='same')
 
-# Adjust layout and show the plot
+def create_spike_convo(MaxHeight_list, loc_times_list):
+    # spike = [(loc_times_list, MaxHeight_list)]
+    # time_length = max(loc_times_list) - min(loc_times_list) + 5 ##make sure the length is enough for spike
+    # spike_list = [0 for i in range(time_length)]
+    loc_times_arr = np.array(loc_times_list)
+    MaxHeight_arr = np.array(MaxHeight_list)
+    min = loc_times_arr[0]
+    max = loc_times_arr[-1]
+    norm_loc_times_arr = MaxHeight_arr - min
+
+    res = [0 for i in range(max - min + 1)]
+    print("---")
+    print(len(res))
+    print(norm_loc_times_arr)
+    for i in range(len(norm_loc_times_arr)):
+        # print(norm_loc_times_arr[i])
+        res[norm_loc_times_arr[i]] = MaxHeight_arr[i]
+    return res
+
+
+
+convolution_result = signal.convolve(create_spike_convo(cm.loc_times_list[ca.pairs[0]],cm.MaxHeight_list[ca.pairs[0]]), continuous_function(t_continuous), mode='same')
+# Plot the original list, continuous function, and convolution result
+plt.figure(figsize=(10, 5))
+
+plt.subplot(311)
+plt.stem(cm.MaxHeight_list[ca.pairs[0]], use_line_collection=True)
+plt.title("Original List")
+
+plt.subplot(312)
+plt.plot(t_continuous, continuous_function(t_continuous))
+plt.title("Continuous Function")
+
+plt.subplot(313)
+plt.plot(t_continuous, convolution_result)
+plt.title("Convolution Result")
+
 plt.tight_layout()
 plt.show()

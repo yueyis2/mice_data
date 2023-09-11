@@ -15,6 +15,8 @@ tag_list = []
 Xpos_list = []
 Ypos_list = []
 loc_times_list = []
+MaxHeight_list = []
+MaxWidth_list = []
 
 R765RF_D5 = {'4':[1,2,3,4,5,6,7,8,9,10,11,12],'6':[1,2],'7':[1,2,3],'10':[1,2,3,4,5,6,7],'13': [1,2,3],'15':[1,2,3,4,5]}
 
@@ -51,13 +53,17 @@ for j in R765RF_D5:
         df = pd.read_csv("/Users/evashenyueyi/Downloads/city_data/R765RF_D5/TT"+ j + "/cl-maze1."+str(i)+".csv")
         maze_name = "R765RF_D5/TT"+ j + "/cl-maze1."+str(i)
         tag_list.append(maze_name)
-        select_cols = df.columns[-3:]
+        select_cols = df.columns[-5:]
         df.drop(df.index[0:4], inplace=True)
         df_new = df[select_cols].astype(int)
 
         Xpos = df_new['XPos'].tolist()
         Ypos = df_new['YPos'].tolist()
         loc_times = df_new['Timestamp'].tolist()
+        MaxHeight = df_new['MaxHeight'].tolist()
+        MaxWidth = df_new['MaxWidth'].tolist()
+
+
 
         df_new['Firingtime'] = range(1,len(df)+1)
         data = [make_tuple(df_new['Timestamp'].tolist(), df_new['Firingtime'].tolist())]
@@ -66,6 +72,9 @@ for j in R765RF_D5:
         Ypos_list.append(Ypos)
         loc_times_list.append(loc_times)
         df_new_length.append(df.shape[0])
+        MaxHeight_list.append(MaxHeight)
+        MaxWidth_list.append(MaxWidth)
+        spike = [make_tuple(loc_times_list, MaxHeight_list)]
         # location_plot(Xpos, Ypos, loc_times)
 
 
