@@ -1,5 +1,4 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import func_helpers as fh
@@ -10,6 +9,7 @@ from matplotlib.colors import ListedColormap, Normalize
 from scipy import signal
 from datetime import datetime, timedelta
 import copy
+from PIL import Image, ImageDraw
 
 
 df_list = []
@@ -20,6 +20,7 @@ Ypos_list = []
 loc_times_list = []
 MaxHeight_list = []
 MaxWidth_list = []
+time_pos_dict_list = []
 
 R765RF_D5 = {'4':[1,2,3,4,5,6,7,8,9,10,11,12],'6':[1,2],'7':[1,2,3],'10':[1,2,3,4,5,6,7],'13': [1,2,3],'15':[1,2,3,4,5]}
 
@@ -183,15 +184,47 @@ def location_plot(Xpos, Ypos, loc_times, XorY):
     # Show the plot
     plt.grid(True)
 
+def get_raw_timestamp(start_min, end_min, xids):
+        raw_timestamp = []
+        startid = xids[0]
+        start = (start_min * 6e7) + startid
+        end = (end_min * 6e7) + startid
+        for ids in xids:
+            if ids > start and ids < end:
+                raw_timestamp.append(ids)
+        return raw_timestamp
+
+def get_value_tolist(dict, timelist):
+        value = []
+        for ids in timelist:
+            value.append(dict.get(ids))
+        return value
+
+def get_adjacent_time_differences(lst):
+    differences = [0]
+    for i in range(len(lst) - 1):
+        difference = lst[i + 1] - lst[i]
+        differences.append(difference//1e6)
+    return differences
+
+
+def get_idx(lst, target):
+    for i in range(len(lst)):
+        if lst[i]>=target:
+            return i
+    return None
+
+
+
 ######################
 ######################
 
-for j in R859_D2:
+for j in R765RF_D5:
     # print(j)
-    for i in R859_D2[j]:
+    for i in R765RF_D5[j]:
         # print(i)
-        df = pd.read_csv("/Users/evashenyueyi/Downloads/city_data/R859_D2/TT"+ j + "/cl-maze1."+str(i)+".csv")
-        maze_name = "R859_D2/TT"+ j + "/cl-maze1."+str(i)
+        df = pd.read_csv("/Users/evashenyueyi/Downloads/city_data/R765RF_D5/TT"+ j + "/cl-maze1."+str(i)+".csv")
+        maze_name = " R765RF_D5/TT"+ j + "/cl-maze1."+str(i)
         tag_list.append(maze_name)
         select_cols = df.columns[-5:]
         df.drop(df.index[0:4], inplace=True)
@@ -202,6 +235,10 @@ for j in R859_D2:
         loc_times = df_new['Timestamp'].tolist()
         MaxHeight = df_new['MaxHeight'].tolist()
         MaxWidth = df_new['MaxWidth'].tolist()
+        df_new['XYpos'] = df[['XPos', 'YPos']].apply(lambda x: tuple(x), axis=1)
+        time_pos_dict = df_new.set_index('Timestamp')['XYpos'].to_dict()
+
+        # print(time_pos_dict)
 
         # loc_times = [df_new['Timestamp'].tolist()[0]] + df_new['Timestamp'].tolist()
 
@@ -213,6 +250,7 @@ for j in R859_D2:
         df_new_length.append(df.shape[0])
         MaxHeight_list.append(MaxHeight)
         MaxWidth_list.append(MaxWidth)
+        time_pos_dict_list.append(time_pos_dict)
 
     
         spike_len1 = len(MaxHeight)
@@ -239,13 +277,15 @@ row_indices, col_indices = np.unravel_index(top_indices, LM_copy.shape)
 print("Indices of the 5 largest numbers:")
 for i in range(5):
     index_list.append((row_indices[i], col_indices[i]))
-    print(f"Number: {LM_copy[row_indices[i], col_indices[i]]}, Index: ({row_indices[i]}, {col_indices[i]})")
+    print(f"Number: {LM_copy[row_indices[i], col_indices[i]]}, Index: ({row_indices[i]}, {col_indices[i]}), Corresponding maze : {tag_list[row_indices[i]], tag_list[col_indices[i]]}")
+    
 
 print("=======================")
 print(index_list)
 m = np.argmax(LM_copy_flatten)
 r, c = divmod(m, LM.shape[1])
 print(r, c)
+# print(tag_list[r], tag_list[c])
 
 print("=======================")
 
@@ -258,7 +298,7 @@ plt.show()
 
 
 
-
+i = 0
 for pairs in index_list:
     # commented
     # print(pairs)
@@ -267,12 +307,14 @@ for pairs in index_list:
     xtuples, ytuples = get_xy_tuples(pairs[0], pairs[1])
     (xids, xvals), (yids, yvals) = fh.prune(xtuples, ytuples, ids=True)
 
+    raw_ids, raw_end = get_time_axis_min(xids, yids)
+
+
     xvals = tuple(map(float, xvals))
     yvals = tuple(map(float, yvals))
 
     xids = normalize_timestamp(xids)
     yids = normalize_timestamp(yids)
-
 
     # subplot1
     plt.figure(figsize=(16,8))
@@ -329,19 +371,56 @@ for pairs in index_list:
     areavals = cumul_area_iter(xvals, yvals)
     time_ids, time_axis_end = get_time_axis_min(xids, yids)
 
+    # print("======")
+    # print(time_ids)
+
+
+####try to write a function to find prpper smaller_minutes and larger_minutes
+
+    def detect_change(x, delta_x, bound, time_range):
+        smaller_minutes = x - delta_x
+        larger_minutes = x + delta_x
+        smaller_idx = get_idx(time_ids, smaller_minutes)
+        mid_idx = get_idx(time_ids, x)
+        larger_idx = get_idx(time_ids, larger_minutes)
+        y_left = areavals[smaller_idx]
+        y_mid = areavals[mid_idx]
+        y_right = areavals[larger_idx]
+        if abs(y_right - y_left) > bound:
+            tmp = make_tuple(x - delta_x, x + delta_x)
+            # print(tmp)
+            time_range.append(tmp) 
+        return time_range
+
+    time_range = []
+    for mins in range(1, int(max(time_ids))-1):
+        time_range = detect_change(mins, 1, 2.5, time_range)
+
+    print("====the time range need to observe==========")
+    print(time_range)
+
+
+
+    smaller_minutes = 13
+    larger_minutes = 18
+    ## get correspinding index in areaval of each time_id
+    smaller_idx = get_idx(time_ids, smaller_minutes)
+    larger_idx = get_idx(time_ids, larger_minutes)
     # subplot3
     plt.subplot(2,4,4)
-    plt.plot(time_ids,areavals)
+    plt.plot(time_ids,areavals, color="blue")
+    plt.plot(time_ids[smaller_idx: larger_idx],areavals[smaller_idx: larger_idx], color="red")
+    
     plt.xlabel('Timestamps') 
     plt.ylabel('CumlArea') 
     plt.title('Cumulated Area Plot')
     #plt.xlim(0.0, time_axis_end)
     # plt.show()
 
-    # comment
-    # debugging areavals&LM
-    print(areavals[-1])
-    print(LM[pairs[0]][pairs[1]])
+    # # comment
+    # # debugging areavals&LM
+    # print(areavals[-1])
+    # print(LM[pairs[0]][pairs[1]])
 
     # subplot4
     # subplot5
@@ -351,7 +430,125 @@ for pairs in index_list:
 
     plt.show()
 
-    
-   
+    ### plot the cuml_posi
+    plt.figure(figsize=(16,8))
+    plt.subplot(1,2,1)
+    plt.plot(time_ids,areavals, color="blue")
+    plt.plot(time_ids[smaller_idx: larger_idx],areavals[smaller_idx: larger_idx], color="red")
+    plt.xlabel('Timestamps') 
+    plt.ylabel('CumlArea') 
+    plt.title('Cumulated Area Plot')
 
+    import pop_s_2 as ps2
     
+    ps2.get_position_plot(smaller_minutes, larger_minutes, "/Users/evashenyueyi/Downloads/city_data/R765RF_D5/Pos.p.ascii.csv")
+
+    plt.show()
+
+
+
+
+
+
+
+
+###########
+    # time_range_for_group_pairs1=[[(12,17),(23,28),(32,37)],
+    #                         [(15,25),(28,32)],
+    #                         [(22,27),(30,35)],
+    #                         [(12,17),(20,25),(25,30)],
+    #                         [(8,13),(13,18)]]
+    # time_range_for_group_pairs2=[[(13,18),(21,26)],
+    #                         [(40,43),(43,47)],
+    #                         [(30,35),(50,55)],
+    #                         [(18,23)],
+    #                         [(30,35),(48,18)]]
+    # # for time_range_for_each_pairs in time_range_for_group_pairs:
+    # time_range_for_each_pairs = [(30,35),(50,55)]
+    #     # print(get_raw_timestamp(12, 17, loc_times_list[pairs[0]]))
+
+    # for time_range in time_range_for_each_pairs:
+    #     special_change_ids1 = get_raw_timestamp(time_range[0], time_range[1], loc_times_list[pairs[0]])
+    #     position_tuple1 = get_value_tolist(time_pos_dict_list[pairs[0]],special_change_ids1)
+    #     difference1 = get_adjacent_time_differences(special_change_ids1) 
+
+    #     special_change_ids2 = get_raw_timestamp(time_range[0], time_range[1], loc_times_list[pairs[1]])
+    #     position_tuple2 = get_value_tolist(time_pos_dict_list[pairs[1]],special_change_ids2)
+    #     difference2 = get_adjacent_time_differences(special_change_ids2) 
+
+    #     width, height = 500, 400  # Adjust as needed
+    #     num_frames1 = len(difference1)
+    #     durations1 = difference1
+    #     # Define lists of x and y coordinates for each frame
+    #     x_coordinates = [each[0] for each in position_tuple1]
+    #     y_coordinates = [height - each[1] for each in position_tuple1]
+    #     # Create an empty list to store the frames
+    #     frames1 = []
+    #     # Create frames
+    #     for frame in range(num_frames1):
+    #         # Create a new blank image for each frame
+    #         img = Image.new('RGB', (width, height), color='white')
+    #         draw = ImageDraw.Draw(img)
+
+    #         # Get the x and y coordinates for the current frame
+    #         x = x_coordinates[frame]
+    #         y = y_coordinates[frame]
+
+    #         # Draw the dot at the specified (x, y) coordinates
+    #         draw.ellipse([x - 5, y - 5, x + 5, y + 5], fill='red')
+
+    #         # Draw the path by overlaying previous frames
+    #         for i in range(frame):
+    #             x_i = x_coordinates[i]
+    #             y_i = y_coordinates[i]
+    #             draw.ellipse([x_i - 2, y_i - 2, x_i + 2, y_i + 2], fill='red')
+            
+    #         for i in range(frame - 1):
+    #             x1, y1 = x_coordinates[i], y_coordinates[i]
+    #             x2, y2 = x_coordinates[i + 1], y_coordinates[i + 1]
+    #             draw.line([(x1, y1), (x2, y2)], fill='red')
+
+
+    #         # Append the frame to the list with the corresponding duration
+    #         frames1.append((img, durations1[frame]))
+    #     print(len(frames1))
+    #     # Save the frames as a GIF
+    #     frames1[0][0].save('moving_plot' + str(pairs[0]) +"for time range"+ str(time_range) +'.gif', save_all=True, append_images=[frame[0] for frame in frames1[1:]], duration=[frame[1] for frame in frames1])
+
+    #     width, height = 500, 400  # Adjust as needed
+    #     num_frames2 = len(difference2)
+    #     durations2 = difference2
+    #     # Define lists of x and y coordinates for each frame
+    #     x_coordinates = [each[0] for each in position_tuple2]
+    #     y_coordinates = [height - each[1] for each in position_tuple2]
+    #     # Create an empty list to store the frames
+    #     frames2 = []
+    #     # Create frames
+    #     for frame in range(num_frames2):
+    #         # Create a new blank image for each frame
+    #         img = Image.new('RGB', (width, height), color='white')
+    #         draw = ImageDraw.Draw(img)
+
+    #         # Get the x and y coordinates for the current frame
+    #         x = x_coordinates[frame]
+    #         y = y_coordinates[frame]
+
+    #         # Draw the dot at the specified (x, y) coordinates
+    #         draw.ellipse([x - 5, y - 5, x + 5, y + 5], fill='blue')
+
+    #         # Draw the path by overlaying previous frames
+    #         for i in range(frame):
+    #             x_i = x_coordinates[i]
+    #             y_i = y_coordinates[i]
+    #             draw.ellipse([x_i - 2, y_i - 2, x_i + 2, y_i + 2], fill='blue')
+            
+    #         for i in range(frame - 1):
+    #             x1, y1 = x_coordinates[i], y_coordinates[i]
+    #             x2, y2 = x_coordinates[i + 1], y_coordinates[i + 1]
+    #             draw.line([(x1, y1), (x2, y2)], fill='blue')
+
+    #         # Append the frame to the list with the corresponding duration
+    #         frames2.append((img, durations2[frame]))
+    #     print(len(frames2))
+    #     # Save the frames as a GIF
+    #     frames2[0][0].save('moving_plot' + str(pairs[1]) +"for time range"+ str(time_range) +'.gif', save_all=True, append_images=[frame[0] for frame in frames2[1:]], duration=[frame[1] for frame in frames2])

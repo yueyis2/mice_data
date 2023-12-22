@@ -67,14 +67,14 @@ for j in R765RF_D5:
 
         df_new['Firingtime'] = range(1,len(df)+1)
         data = [make_tuple(df_new['Timestamp'].tolist(), df_new['Firingtime'].tolist())]
-        df_list.append(data)
         Xpos_list.append(Xpos)
         Ypos_list.append(Ypos)
         loc_times_list.append(loc_times)
         df_new_length.append(df.shape[0])
         MaxHeight_list.append(MaxHeight)
         MaxWidth_list.append(MaxWidth)
-        spike = [make_tuple(loc_times_list, MaxHeight_list)]
+        spike = [make_tuple(loc_times, MaxHeight)]
+        df_list.append(spike)
         # location_plot(Xpos, Ypos, loc_times)
 
 

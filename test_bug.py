@@ -184,67 +184,205 @@ pairs1 = ((1, 19, 20, 23, 27, 29, 30, 31, 32, 33, 35, 37, 39, 40, 41, 44, 45, 46
 # # Show the plot
 # plt.show()
 
-###============================### The following part is for convolution
-import numpy as np
-from scipy import signal
-import matplotlib.pyplot as plt
-import cuml_area as ca
-import create_matrix as cm
+# ###============================### The following part is for convolution
+# import numpy as np
+# from scipy import signal
+# import matplotlib.pyplot as plt
+# import cuml_area as ca
+# import create_matrix as cm
 
-# Define a list (discrete signal)
-signal_list = [1, 2, 3, 4, 5]
+# # Define a list (discrete signal)
+# signal_list = [1, 2, 3, 4, 5]
 
-# Define a continuous function (e.g., a Gaussian)
-a = 1.5
-b = 3
-def continuous_function(x):
-    return (np.exp(-x/b) * x**(a-1))
+# # Define a continuous function (e.g., a Gaussian)
+# a = 1.5
+# b = 3
+# def continuous_function(x):
+#     return (np.exp(-x/b) * x**(a-1))
 
-# Define the time axis for the continuous function
-axis_len = max(ca.normalize_timestamp(cm.loc_times_list[ca.pairs[0]]))
-spike_len = len(cm.MaxHeight_list[ca.pairs[0]])
-t_continuous = np.linspace(0, axis_len, spike_len)
+# # Define the time axis for the continuous function
+# axis_len = max(ca.normalize_timestamp(cm.loc_times_list[ca.pairs[0]]))
+# spike_len = len(cm.MaxHeight_list[ca.pairs[0]])
+# t_continuous = np.linspace(0, axis_len, spike_len)
 
-print(axis_len)
-# Calculate the convolution between the list and the continuous function
-# convolution_result = signal.convolve(signal_list, continuous_function(t_continuous), mode='same')
+# print(axis_len)
+# # Calculate the convolution between the list and the continuous function
+# # convolution_result = signal.convolve(signal_list, continuous_function(t_continuous), mode='same')
 
-def create_spike_convo(MaxHeight_list, loc_times_list):
-    # spike = [(loc_times_list, MaxHeight_list)]
-    # time_length = max(loc_times_list) - min(loc_times_list) + 5 ##make sure the length is enough for spike
-    # spike_list = [0 for i in range(time_length)]
-    loc_times_arr = np.array(loc_times_list)
-    MaxHeight_arr = np.array(MaxHeight_list)
-    min = loc_times_arr[0]
-    max = loc_times_arr[-1]
-    norm_loc_times_arr = MaxHeight_arr - min
+# def create_spike_convo(MaxHeight_list, loc_times_list):
+#     # spike = [(loc_times_list, MaxHeight_list)]
+#     # time_length = max(loc_times_list) - min(loc_times_list) + 5 ##make sure the length is enough for spike
+#     # spike_list = [0 for i in range(time_length)]
+#     loc_times_arr = np.array(loc_times_list)
+#     MaxHeight_arr = np.array(MaxHeight_list)
+#     min = loc_times_arr[0]
+#     max = loc_times_arr[-1]
+#     norm_loc_times_arr = MaxHeight_arr - min
 
-    res = [0 for i in range(max - min + 1)]
-    print("---")
-    print(len(res))
-    print(norm_loc_times_arr)
-    for i in range(len(norm_loc_times_arr)):
-        # print(norm_loc_times_arr[i])
-        res[norm_loc_times_arr[i]] = MaxHeight_arr[i]
-    return res
+#     res = [0 for i in range(max - min + 1)]
+#     print("---")
+#     print(len(res))
+#     print(norm_loc_times_arr)
+#     for i in range(len(norm_loc_times_arr)):
+#         # print(norm_loc_times_arr[i])
+#         res[norm_loc_times_arr[i]] = MaxHeight_arr[i]
+#     return res
 
 
 
-convolution_result = signal.convolve(create_spike_convo(cm.loc_times_list[ca.pairs[0]],cm.MaxHeight_list[ca.pairs[0]]), continuous_function(t_continuous), mode='same')
-# Plot the original list, continuous function, and convolution result
-plt.figure(figsize=(10, 5))
+# convolution_result = signal.convolve(create_spike_convo(cm.loc_times_list[ca.pairs[0]],cm.MaxHeight_list[ca.pairs[0]]), continuous_function(t_continuous), mode='same')
+# # Plot the original list, continuous function, and convolution result
+# plt.figure(figsize=(10, 5))
 
-plt.subplot(311)
-plt.stem(cm.MaxHeight_list[ca.pairs[0]], use_line_collection=True)
-plt.title("Original List")
+# plt.subplot(311)
+# plt.stem(cm.MaxHeight_list[ca.pairs[0]], use_line_collection=True)
+# plt.title("Original List")
 
-plt.subplot(312)
-plt.plot(t_continuous, continuous_function(t_continuous))
-plt.title("Continuous Function")
+# plt.subplot(312)
+# plt.plot(t_continuous, continuous_function(t_continuous))
+# plt.title("Continuous Function")
 
-plt.subplot(313)
-plt.plot(t_continuous, convolution_result)
-plt.title("Convolution Result")
+# plt.subplot(313)
+# plt.plot(t_continuous, convolution_result)
+# plt.title("Convolution Result")
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
+
+
+
+# ###============================### The following part is for debugging the time normalization problem
+# def normalize_timestamp(timestamp_tuple):
+#     time_difference_minutes = []
+#     starttime = timestamp_tuple[0] / 6e7
+#     # starttime = datetime.fromtimestamp(starttime)
+
+#     for milliseconds in timestamp_tuple:
+#         seconds = milliseconds / 6e7
+        
+#         # timestamp_datetime = datetime.fromtimestamp(seconds)
+#         # time_difference = timestamp_datetime - starttime
+#         time_difference = seconds - starttime
+
+#         # print(time_difference)
+
+#         # time_difference_minutes.append(time_difference.total_seconds())
+#         time_difference_minutes.append(time_difference)
+
+
+#     # print("Timestamp as datetime:", time_difference_minutes)
+#     return time_difference_minutes
+
+# timestamp_tuple =(2975469822808, 2975481491398, 2975505875919, 2975580058295, 2975629241026, 2975693749344, 2975705376620, 2975742491574, 2975749479977, 2975765897596, 2975862936244, 2975882635674, 2975933748622, 2975942097119, 2975952453552, 2975985198539, 2975985206539, 2976030776677, 2976066998319, 2976102608554, 2976145060537, 2976186628021, 2976300730912, 2976321054685, 2976326308121, 2976409168588, 2976502985206, 2976604338853, 2976606331446, 2976609056851, 2976614301224, 2976659452206, 2976663367329, 2976698458190, 2976732416177, 2976735031925, 2976748473576, 2976749255763, 2976841469101, 2976861751625, 2976923030194, 2976971096456, 2977000270163, 2977009793315, 2977060107607, 2977066568855, 2977071573134, 2977076680476, 2977133594890, 2977196639209, 2977253313655, 2977291072077, 2977293567295, 2977398321128, 2977522620328, 2977676873547, 2977683888732, 2977745155239, 2977762744450, 2977805347746, 2977809016275, 2977810684837, 2977815100898, 2977839475013, 2977869762657, 2977909798329, 2977913087577, 2977920266575, 2977925291260, 2977969202117, 2977986938829, 2978008232789, 2978068255296, 2978120524588, 2978174183785, 2978181059939, 2978197871869, 2978218503580, 2978232638793, 2978268760966, 2978314676854, 2978383648857, 2978393697697, 2978418750968, 2978428534402, 2978450348612, 2978475747664, 2978486203441, 2978508528088, 2978532726016, 2978553816633)
+
+# starttime = timestamp_tuple[0] / 6e7
+
+# norm_timestamp = normalize_timestamp(timestamp_tuple)
+
+# print(norm_timestamp)
+
+# avail_stamps = []
+# norm_timestamp1 = 25 * 6e7 + timestamp_tuple[0]
+# norm_timestamp2 = 35 * 6e7 + timestamp_tuple[0]
+# for stamps in timestamp_tuple:
+#     if stamps > norm_timestamp1 and stamps < norm_timestamp2:
+#         avail_stamps.append(stamps)
+# print(avail_stamps)
+
+# def get_raw_timestamp(start_min, end_min, xids):
+#     raw_timestamp = []
+#     startid = xids[0]
+#     start = (start_min * 6e7) + startid
+#     end = (end_min * 6e7) + startid
+#     for ids in xids:
+#         if ids > start and ids < end:
+#             raw_timestamp.append(ids)
+#     return raw_timestamp
+# print(get_raw_timestamp(12, 17, timestamp_tuple))
+
+
+# ###============================### The following part is for debugging the time normalization problem(1D)
+# from matplotlib import pyplot as plt 
+# import numpy as np 
+# from matplotlib.animation import FuncAnimation 
+# from matplotlib import animation
+
+# # initializing a figure in 
+# # which the graph will be plotted 
+# fig = plt.figure() 
+
+# # marking the x-axis and y-axis 
+# axis = plt.axes(xlim =(0, 4), 
+# 				ylim =(-2, 2)) 
+
+# # initializing a line variable 
+# line, = axis.plot([], [], lw = 3) 
+
+# # data which the line will 
+# # contain (x, y) 
+# def init(): 
+# 	line.set_data([], []) 
+# 	return line, 
+
+# def animate(i): 
+# 	x = np.linspace(0, 4, 1000) 
+
+# 	# plots a sine graph 
+# 	y = np.sin(2 * np.pi * (x - 0.01 * i)) 
+# 	line.set_data(x, y) 
+	
+# 	return line, 
+
+# anim = FuncAnimation(fig, animate, init_func = init, 
+# 					frames = 200, interval = 20, blit = True) 
+
+
+# writergif = animation.PillowWriter(fps=30)
+# anim.save('filename.gif',writer=writergif)
+
+position_tuple1=[(119.3173, 330.7885), (333.8016, 229.5873), (227.9524, 160.2063), (253.6138, 143.5172), (253.6138, 143.5172), (254.1006, 139.4906), (345.5366, 90.2683), (354.6101, 90.20755), (401.585, 107.7891), (401.585, 107.7891), (401.585, 107.7891), (411.25, 109.9762), (426.3066, 99.60584), (426.3066, 99.60584), (426.3066, 99.60584), (432.3177, 98.64486), (0.0, 0.0), (472.0, 94.5), (472.0, 94.5), (474.2062, 391.1031), (250.1774, 118.7097), (353.6704, 88.67046), (422.9746, 102.7288), (442.7376, 99.18439), (442.7376, 99.18439), (418.4126, 94.27972), (407.4716, 94.7561), (407.4716, 94.7561), (399.4305, 116.4305), (399.4305, 116.4305), (399.4305, 116.4305), (390.7911, 130.1139), (387.4915, 138.661), (385.7784, 146.7425), (384.7162, 166.3108), (383.5349, 169.8217), (382.9606, 170.3937), (381.7462, 170.4692), (381.7462, 170.4692), (381.4638, 171.1956), (380.5954, 174.2901), (381.9386, 176.7281), (382.3786, 177.4951), (379.9185, 175.4593), (379.7185, 172.3704), (379.7185, 172.3704), (358.4672, 171.0984), (358.4672, 171.0984), (358.4672, 171.0984), (358.3898, 170.9661), (358.3898, 170.9661), (397.9655, 178.1552), (398.6048, 182.0403), (321.0, 262.4602), (209.7895, 229.5132), (338.4044, 85.85294), (338.4044, 85.85294), (403.4903, 95.43871), (430.1972, 99.35211), (430.1972, 99.35211), (413.4593, 105.6), (413.4593, 105.6), (413.4593, 105.6), (408.451, 109.3529), (408.451, 109.3529), (402.3942, 128.8175), (394.85, 152.6357), (394.85, 152.6357), (383.6604, 166.3774), (383.6604, 166.3774), (378.8108, 166.018), (378.525, 166.5917), (379.0125, 169.425), (376.1928, 170.0964), (376.2, 165.4105), (364.3889, 162.7302), (364.3889, 162.7302), (364.3889, 162.7302), (360.9691, 162.2371), (360.9691, 162.2371), (349.3077, 138.8077), (349.3077, 138.8077), (349.8732, 138.6972), (350.0, 138.8333), (350.5, 138.6048), (349.776, 138.576), (349.9174, 135.0459), (350.2049, 134.7295), (350.2049, 134.7295), (350.3089, 134.6911), (350.3876, 134.6822), (350.3876, 134.6822), (350.2969, 134.75), (350.4656, 134.6565), (350.4656, 134.6565), (350.622, 134.5984), (350.6378, 134.6772), (350.6378, 134.6772), (351.1313, 133.9899), (350.8108, 135.027), (350.8108, 135.027), (351.9661, 137.7203), (360.0, 157.425), (362.4318, 157.6818), (369.3095, 156.5238), (369.3095, 156.5238), (371.1469, 162.6993), (381.641, 154.3162), (387.4893, 158.5461), (387.4893, 158.5461), (390.4524, 172.0794), (390.4524, 172.0794), (386.9487, 171.6154), (386.604, 172.8993), (386.604, 172.8993), (381.9375, 175.2361), (381.9375, 175.2361), (379.8571, 177.2527), (375.2162, 175.5743), (367.5469, 161.2969), (371.0076, 146.7348), (371.0076, 146.7348), (372.9778, 147.3852), (372.9778, 147.3852), (374.5603, 152.8369), (374.5603, 152.8369), (373.9924, 182.0153), (373.9924, 182.0153), (222.9422, 174.2397), (122.3981, 342.8544), (332.1391, 92.0174), (333.8051, 90.54237), (408.6438, 106.0685), (408.6438, 106.0685), (438.1238, 97.09524), (415.018, 98.47748), (415.018, 98.47748), (398.622, 116.4961), (387.8159, 137.8221), (379.3431, 159.5985), (379.3431, 159.5985), (379.12, 171.36), (377.5221, 171.8676), (375.5454, 171.0682), (368.7578, 170.4844), (367.6945, 169.9907), (367.6945, 169.9907), (127.373, 278.5476)]
+
+special_change_ids1=[2271373511107, 2271399089482, 2271402454357, 2271429893295, 2271429897857, 2271429914388, 2271430506545, 2271430509982, 2271430732545, 2271430735826, 2271430739545, 2271430743888, 2271430879982, 2271430885326, 2271430891701, 2271430912045, 2271433608732, 2271434761201, 2271434764888, 2271442536951, 2271456243857, 2271457557826, 2271457859045, 2271458071888, 2271458076201, 2271458653420, 2271458709795, 2271458722732, 2271458842482, 2271458850982, 2271458868701, 2271458930982, 2271458956982, 2271458979263, 2271459076232, 2271459103545, 2271459142951, 2271459195138, 2271459199763, 2271459224232, 2271459264388, 2271459369732, 2271459383795, 2271459503638, 2271459515513, 2271459524107, 2271459940607, 2271459949982, 2271459963670, 2271459973545, 2271459978576, 2271468753732, 2271468991732, 2271477279545, 2271480284513, 2271499299420, 2271499303826, 2271499563795, 2271500237638, 2271500246638, 2271500327920, 2271500336076, 2271500343545, 2271500360513, 2271500375920, 2271500455263, 2271500565826, 2271500575232, 2271500652263, 2271500657388, 2271500757576, 2271500804607, 2271500910451, 2271501025795, 2271501141763, 2271501260482, 2271501265576, 2271501271545, 2271501282951, 2271501287826, 2271501931857, 2271501940295, 2271502009013, 2271502111513, 2271502119170, 2271502216107, 2271502666701, 2271503250888, 2271503276857, 2271503426607, 2271503597826, 2271503603607, 2271503640295, 2271503739013, 2271503742482, 2271503801013, 2271504053357, 2271504058201, 2271504110545, 2271504194420, 2271504208326, 2271504323576, 2271504740920, 2271504760701, 2271504841170, 2271504846513, 2271504979295, 2271505133701, 2271505226638, 2271505240513, 2271505391607, 2271505399951, 2271505507076, 2271505526982, 2271505542920, 2271505630513, 2271505634670, 2271505652888, 2271505774107, 2271506054138, 2271506276920, 2271506283326, 2271506310013, 2271506318232, 2271506324045, 2271506329795, 2271512541951, 2271512558388, 2271516789763, 2271525065420, 2271616020045, 2271616498388, 2271619173201, 2271619181701, 2271620321857, 2271620548388, 2271620563107, 2271620692013, 2271620784607, 2271620930076, 2271620936263, 2271621175826, 2271621303701, 2271621334826, 2271621437232, 2271621448451, 2271621452951, 2271651692295]
+
+###============================### The following part is for debugging the time normalization problem(2D)
+from PIL import Image, ImageDraw
+
+# Set the dimensions of the image and number of frames
+width, height = 400, 400  # Adjust as needed
+num_frames = 20
+
+# Define durations for each frame (in milliseconds)
+durations = [100, 150, 200, 300, 310, 1, 1, 1, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1050]
+
+# Define lists of x and y coordinates for each frame
+x_coordinates = [i**2 for i in range(20)]
+y_coordinates = [(height - 10*i) for i in range(20)]
+
+# Create an empty list to store the frames
+frames = []
+
+# Create frames
+for frame in range(num_frames):
+    # Create a new blank image for each frame
+    img = Image.new('RGB', (width, height), color='white')
+    draw = ImageDraw.Draw(img)
+
+    # Get the x and y coordinates for the current frame
+    x = x_coordinates[frame]
+    y = y_coordinates[frame]
+
+    # Draw the dot at the specified (x, y) coordinates
+    draw.ellipse([x - 5, y - 5, x + 5, y + 5], fill='blue')
+
+    # Draw the path by overlaying previous frames
+    for i in range(frame):
+        x_i = x_coordinates[i]
+        y_i = y_coordinates[i]
+        draw.ellipse([x_i - 2, y_i - 2, x_i + 2, y_i + 2], fill='blue')
+
+    # Append the frame to the list with the corresponding duration
+    frames.append((img, durations[frame]))
+print(len(frames))
+# Save the frames as a GIF
+frames[0][0].save('moving_dots_with_paths_custom_coordinates.gif', save_all=True, append_images=[frame[0] for frame in frames[1:]], duration=[frame[1] for frame in frames])
+
